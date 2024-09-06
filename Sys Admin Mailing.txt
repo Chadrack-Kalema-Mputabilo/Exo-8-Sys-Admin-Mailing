@@ -1,0 +1,83 @@
+Pour créer un script qui envoie les performances du serveur (mémoire, utilisation du CPU, et espace de stockage disponible) à un administrateur système par e-mail, suivez ces étapes :
+
+### Étapes pour configurer le script de monitoring
+
+1. **Installer `mail` (si nécessaire)** :
+   Assurez-vous que vous avez un programme de messagerie installé sur votre serveur. Sur les systèmes basés sur Debian/Ubuntu, vous pouvez utiliser `mailutils` :
+
+   ```bash
+   sudo apt-get install mailutils
+   ```
+
+2. **Créer le script** :
+   Créez un fichier de script, par exemple `monitor_server.sh`.
+
+   ```bash
+   nano ~/monitor_server.sh
+   ```
+
+   Ajoutez le code suivant dans ce fichier :
+
+   ```bash
+   #!/bin/bash
+
+   # Récupérer l'utilisation de la mémoire
+   memory_usage=$(free -h | awk '/^Mem:/ {print $3 "/" $2}')
+
+   # Récupérer l'utilisation du CPU
+   cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
+
+   # Récupérer l'espace de stockage disponible
+   storage_available=$(df -h / | awk 'NR==2 {print $4}')
+
+   # Créer le message
+   message="Performances du serveur :
+   Mémoire utilisée : $memory_usage
+   Utilisation du CPU : $cpu_usage%
+   Espace de stockage disponible : $storage_available"
+
+   # Envoyer l'e-mail
+   echo -e "$message" | mail -s "Rapport de performance du serveur" sysadmin@example.com
+   ```
+
+   Remplacez `sysadmin@example.com` par l'adresse e-mail de votre administrateur système.
+
+   Enregistrez et fermez l'éditeur (dans `nano`, utilisez `CTRL + X`, puis `Y` pour confirmer).
+
+3. **Rendre le script exécutable** :
+   Exécutez la commande suivante pour rendre le script exécutable :
+
+   ```bash
+   chmod +x ~/monitor_server.sh
+   ```
+
+4. **Configurer le cron job** :
+   Ouvrez le crontab pour l'utilisateur actuel :
+
+   ```bash
+   crontab -e
+   ```
+
+   Ajoutez la ligne suivante pour exécuter le script chaque heure :
+
+   ```
+   0 * * * * /bin/bash ~/monitor_server.sh
+   ```
+
+   Enregistrez et fermez l'éditeur.
+
+### Tester votre script
+
+1. **Exécuter manuellement le script** :
+   Pour tester le script immédiatement, exécutez :
+
+   ```bash
+   ~/monitor_server.sh
+   ```
+
+2. **Vérifier les e-mails** :
+   Vérifiez l'adresse e-mail du sysadmin pour voir si le message a été reçu.
+
+### Résumé
+
+Vous avez maintenant configuré un script qui récupère les performances du serveur et envoie un rapport par e-mail à l'administrateur système. Le script est programmé pour s'exécuter automatiquement chaque heure. Vous pouvez ajuster la fréquence d'exécution dans le cron job selon vos besoins.
